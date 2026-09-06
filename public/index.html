@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MindMapExplorer2D</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Top Bar -->
+        <header class="top-bar">
+            <div class="top-bar-left">
+                <button id="uploadMmBtn" class="btn btn-primary">Upload .mm</button>
+                <button id="uploadTxtBtn" class="btn btn-secondary">Upload .txt</button>
+                <input type="file" id="mmFileInput" accept=".mm" multiple hidden>
+                <input type="file" id="txtFileInput" accept=".txt" multiple hidden>
+            </div>
+            <h1 class="app-title">MindMapExplorer2D</h1>
+            <div class="top-bar-right">
+                <span id="apiStatus" class="api-status">API: Checking...</span>
+            </div>
+        </header>
+
+        <!-- File Tabs Bar -->
+        <div class="file-tabs-bar">
+            <div class="mm-tabs-container">
+                <span class="tabs-label">Files:</span>
+                <div id="mmTabs" class="tabs"></div>
+            </div>
+            <div class="linked-txt-container">
+                <span class="tabs-label">Linked .txt:</span>
+                <span id="linkedTxtFiles" class="linked-files">None</span>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Left Panel: Mind Map Viewer -->
+            <div class="left-panel">
+                <div class="mind-map-container">
+                    <svg id="mindMapSvg"></svg>
+                </div>
+                <div class="selection-info">
+                    <span id="selectionCount">No nodes selected</span>
+                    <button id="createGroupBtn" class="btn btn-small" disabled>Create Group</button>
+                    <button id="clearSelectionBtn" class="btn btn-small btn-secondary">Clear</button>
+                </div>
+            </div>
+
+            <!-- Right Panel -->
+            <div class="right-panel">
+                <!-- Groups Section -->
+                <section class="panel-section groups-section">
+                    <div class="section-header">
+                        <h2>Groups</h2>
+                        <button id="analyzeGroupsBtn" class="btn btn-small btn-primary" disabled>Analyze Selected</button>
+                    </div>
+                    <div id="groupsList" class="groups-list">
+                        <p class="empty-message">No groups created yet. Select nodes and create a group.</p>
+                    </div>
+                </section>
+
+                <!-- Context Files Section -->
+                <section class="panel-section context-section">
+                    <div class="section-header">
+                        <h2>Context Files</h2>
+                    </div>
+                    <div id="contextFilesList" class="context-files-list">
+                        <p class="empty-message">No .txt files uploaded. Upload files to include as context.</p>
+                    </div>
+                </section>
+
+                <!-- Chat Section -->
+                <section class="panel-section chat-section">
+                    <div class="section-header">
+                        <h2>Chat</h2>
+                        <div class="chat-controls">
+                            <button id="newChatBtn" class="btn btn-small">New</button>
+                            <select id="chatSessionSelect" class="chat-select">
+                                <option value="">Select session...</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="chatMessages" class="chat-messages">
+                        <p class="empty-message">Start a new chat or select groups to analyze.</p>
+                    </div>
+                    <div class="chat-input-container">
+                        <button id="voiceInputBtn" class="btn btn-icon" title="Voice input">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5z"/>
+                                <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                            </svg>
+                        </button>
+                        <textarea id="chatInput" placeholder="Ask about your mind map..." rows="2"></textarea>
+                        <button id="sendChatBtn" class="btn btn-primary">Send</button>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <!-- Bottom Bar -->
+        <footer class="bottom-bar">
+            <button id="exportMmBtn" class="btn btn-secondary" disabled>Export to .mm</button>
+            <button id="selectMessagesBtn" class="btn btn-secondary" disabled>Select Messages</button>
+            <button id="manageFilesBtn" class="btn btn-secondary">Manage File Associations</button>
+        </footer>
+    </div>
+
+    <!-- Modals -->
+    <!-- Create Group Modal -->
+    <div id="createGroupModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Create Group</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <label for="groupNameInput">Group Name:</label>
+                <input type="text" id="groupNameInput" placeholder="Enter group name...">
+                <p id="groupNodeCount" class="info-text"></p>
+            </div>
+            <div class="modal-footer">
+                <button id="confirmCreateGroup" class="btn btn-primary">Create</button>
+                <button class="btn btn-secondary modal-cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- File Manager Modal -->
+    <div id="fileManagerModal" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3>Manage File Associations</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="file-manager-grid">
+                    <div class="file-manager-column">
+                        <h4>Mind Maps (.mm)</h4>
+                        <div id="mmFilesList" class="file-list"></div>
+                    </div>
+                    <div class="file-manager-column">
+                        <h4>Text Files (.txt)</h4>
+                        <div id="txtFilesList" class="file-list"></div>
+                    </div>
+                </div>
+                <div class="association-controls">
+                    <p>Select a .mm file and .txt files, then click "Link" to associate them.</p>
+                    <button id="linkFilesBtn" class="btn btn-primary" disabled>Link Selected</button>
+                    <button id="unlinkFilesBtn" class="btn btn-secondary" disabled>Unlink</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary modal-cancel">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Modal -->
+    <div id="exportModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Export to Mind Map</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <label for="exportNameInput">Mind Map Name:</label>
+                <input type="text" id="exportNameInput" placeholder="analysis-export">
+                <label for="exportCustomization">Additional Instructions:</label>
+                <div class="voice-input-wrapper">
+                    <textarea id="exportCustomization" placeholder="Optional: Add notes or structure preferences..." rows="3"></textarea>
+                    <button id="exportVoiceBtn" class="btn btn-icon btn-small" title="Voice input">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5z"/>
+                            <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                        </svg>
+                    </button>
+                </div>
+                <div id="selectedMessagesPreview" class="selected-messages-preview"></div>
+            </div>
+            <div class="modal-footer">
+                <button id="confirmExport" class="btn btn-primary">Export</button>
+                <button class="btn btn-secondary modal-cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message Selection Mode Banner -->
+    <div id="messageSelectionBanner" class="selection-banner hidden">
+        <span>Click messages to select/deselect for export</span>
+        <button id="doneSelectingBtn" class="btn btn-small btn-primary">Done</button>
+        <button id="cancelSelectingBtn" class="btn btn-small btn-secondary">Cancel</button>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/mmParser.js"></script>
+    <script src="js/mindMapRenderer.js"></script>
+    <script src="js/selectionManager.js"></script>
+    <script src="js/fileManager.js"></script>
+    <script src="js/chatManager.js"></script>
+    <script src="js/claudeApi.js"></script>
+    <script src="js/mmGenerator.js"></script>
+    <script src="js/voiceInput.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
