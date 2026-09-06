@@ -30,3 +30,4 @@ Thumbs.db
 *.rom
 /server/.env
 /server/.env.example
+.vercel

@@ -129,10 +129,14 @@ app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
-app.listen(PORT, () => {
-    console.log(`MindMapExplorer2D server running at http://localhost:${PORT}`);
-    if (!process.env.ANTHROPIC_API_KEY) {
-        console.log('\nWarning: ANTHROPIC_API_KEY not set. Create a .env file with your API key.');
-        console.log('Example: ANTHROPIC_API_KEY=sk-ant-...');
-    }
-});
+if (require.main === module) {
+    app.listen(PORT, () => {
+        console.log(`MindMapExplorer2D server running at http://localhost:${PORT}`);
+        if (!process.env.ANTHROPIC_API_KEY) {
+            console.log('\nWarning: ANTHROPIC_API_KEY not set. Create a .env file with your API key.');
+            console.log('Example: ANTHROPIC_API_KEY=sk-ant-...');
+        }
+    });
+}
+
+module.exports = app;
