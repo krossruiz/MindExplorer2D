@@ -31,7 +31,7 @@ app.post('/api/chat', async (req, res) => {
         res.setHeader('Connection', 'keep-alive');
 
         const requestBody = JSON.stringify({
-            model: 'claude-sonnet-4-20250514',
+            model: 'claude-sonnet-5',
             max_tokens: 8192,
             stream: true,
             system: system || 'You are an expert at analyzing mind maps and finding relationships between concepts. Provide insightful analysis of the connections and patterns in the mind map content provided.',
